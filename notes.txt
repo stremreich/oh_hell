@@ -1,0 +1,4 @@
+tricks:
+	The tricks could be handled with a list of player/card tuples rather than just a list of cards for the played cards.
+	You could then have dealer/leader pointers that change per trick
+	Potentially also keep trick score this way...
