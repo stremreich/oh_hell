@@ -21,7 +21,7 @@ def cardEval(cardList, trumpCard):
 	else:
 		evalList = list(itertools.compress(cardList, followSuitList))
 	
-	if (not len(list(evalList))): #if there's only one card left, return it
+	if (not len(evalList)): #if there's only one card left, return it
 		return evalList[0]
 
 	tempCard = evalList[0] #find highest value card among remaining
@@ -120,9 +120,6 @@ class Game:
 			self.deck.shuffle()
 			for _ in range(hand):  #deal cards
 				for i, player in enumerate(self.players):
-					""" dealtCard = self.deck.order.pop()
-					player.hand.append(dealtCard)
-					self.players[i] = player """
 					self.players[i].hand.append(self.deck.order.pop())
 			trumpCard = self.deck.order.pop()  #turn trump card face-up
 			bids = [0] * len(self.players)  # make bids TODO: make this controlled by a changeable decision function

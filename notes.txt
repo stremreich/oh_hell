@@ -1,4 +1,7 @@
 tricks:
 	The tricks could be handled with a list of player/card tuples rather than just a list of cards for the played cards.
-	You could then have dealer/leader pointers that change per trick
+	You could then have dealer/leader ITERATORS that you could re-define from the starting point of the person who won the last trick for each susequent trick
+		Basically you would make an cycle iterator starting from the lead player for the first trick
+		Then you evaluate the trick and add the score, and REMAKE a list from the cycle iterator, starting at the new leader's index
+	The dealer iterator can just be simply iterated via itertools.cycle
 	Potentially also keep trick score this way...
