@@ -118,7 +118,8 @@ class Game:
 		handNums = list(range(self.maxHands, 0 , -1)) + list(range(2, self.maxHands + 1))
 		dealers = list(islice(cycle(self.players), 0, len(handNums)))  # make list of all dealers for all hands
 		for handIndex, handLength in enumerate(handNums): #hand loop; handIndex is the nth hand and handLength is the tricks in the hand
-			self.deck.shuffle()
+			self.deck = Deck() #re-fill deck
+			self.deck.shuffle() #shuffle
 			for _ in range(handLength):  #deal cards
 				for i, player in enumerate(self.players):
 					self.players[i].hand.append(self.deck.order.pop())
@@ -160,10 +161,13 @@ class Game:
 				wonCard = cardEval(playedCards, trumpCard)
 				wonPlayer = trickOrder[playedCards.index(wonCard)]
 				print("{} won the trick with the {}".format(wonPlayer.name, wonCard.getName()))
+				#TODO: increment trick score
 				
 				#re-make the trick order based on winner of this trick
 				playersIndex = self.players.index(wonPlayer)
 				trickOrder = list(islice(cycle(self.players), playersIndex, playersIndex + len(self.players)))
+			
+			#TODO: evaluate bids and increment game scores
 
 
 
