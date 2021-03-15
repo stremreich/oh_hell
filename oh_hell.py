@@ -1,5 +1,5 @@
 import random
-import itertools
+from itertools import islice, cycle, compress
 
 suit_names = ["Spades", "Clubs", "Hearts", "Diamonds"]
 card_vals = ["Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King", "Ace"]
@@ -17,9 +17,9 @@ def cardEval(cardList, trumpCard):
 			followSuitList[i] = 1
 
 	if(hasTrump):
-		evalList = list(itertools.compress(cardList, trumpList))
+		evalList = list(compress(cardList, trumpList))
 	else:
-		evalList = list(itertools.compress(cardList, followSuitList))
+		evalList = list(compress(cardList, followSuitList))
 	
 	if (not len(evalList)): #if there's only one card left, return it
 		return evalList[0]
@@ -116,9 +116,10 @@ class Game:
 		
 	def play(self):
 		handNums = list(range(self.maxHands, 0 , -1)) + list(range(2, self.maxHands + 1))
-		for hand in handNums: #hand loop
+		dealers = list(islice(cycle(self.players), 0, len(handNums)))  # make list of all dealers for all hands
+		for handIndex, handLength in enumerate(handNums): #hand loop; handIndex is the nth hand and handLength is the tricks in the hand
 			self.deck.shuffle()
-			for _ in range(hand):  #deal cards
+			for _ in range(handLength):  #deal cards
 				for i, player in enumerate(self.players):
 					self.players[i].hand.append(self.deck.order.pop())
 			trumpCard = self.deck.order.pop()  #turn trump card face-up
@@ -127,17 +128,19 @@ class Game:
 			for i in range(len(bids)):
 				bids[i] = random.randint(0, 2) # just give a random bid for now TODO: make generalized
 				sumbids += bids[i]
-			if (sumbids == hand and self.hook): #enforce the hook, this should be handled in the method above eventually
+			if (sumbids == handLength and self.hook): #enforce the hook, this should be handled in the method above eventually
 				bids[len(self.players) - 1] += 1
 
-
-			for trick in range(0, len(self.players[0].hand)): #loop through all tricks in a hand
+			dealer = dealers[handIndex]
+			dealerIndex = self.players.index(dealer)
+			trickOrder = list(islice(cycle(self.players), dealerIndex, dealerIndex + len(self.players))) #set up the initial trick order
+			for trick in range(handLength): #loop through all tricks in a hand
+				print("Trick %d:" % (trick + 1))
 				playedCards = []	
 
-				for player in self.players:
-					print("Trick %d:" % (trick + 1))
-					#Play lead card, dealer is the last player in self.players
-					if player == self.players[0]: 
+				for player in trickOrder:
+					#Play lead card
+					if player == trickOrder[0]: 
 						playedCards.append(player.hand.pop(random.randint(0, len(player.hand) - 1)))
 					else:
 						# must play only legal cards
@@ -150,14 +153,18 @@ class Game:
 								played = True
 								break
 						if(not played): #if there's no legal card, play a random card
-							playedCards.append(player.hand.pop(random.randint(0, len(player.hand))))
+							playedCards.append(player.hand.pop(random.randrange(len(player.hand))))
+					
+					print("{} played {}".format(player.name, playedCards[-1].getName()))
 						
 				wonCard = cardEval(playedCards, trumpCard)
-				print("%s was the best card." % wonCard.getName())
-				#TODO: eval who won the trick, maybe compartmentalize trick a bit more? only need a list of players and their trick score...
-				#TODO: change who leads based on who won the trick, maybe do this with pointers, itertools.cycle()
+				wonPlayer = trickOrder[playedCards.index(wonCard)]
+				print("{} won the trick with the {}".format(wonPlayer.name, wonCard.getName()))
+				
+				#re-make the trick order based on winner of this trick
+				playersIndex = self.players.index(wonPlayer)
+				trickOrder = list(islice(cycle(self.players), playersIndex, playersIndex + len(self.players)))
 
-			self.players.append(self.players.pop(0)) #change dealer at the end of the hand, maybe also do this with itertools.cycle
 
 
 c = Card(8,1)
