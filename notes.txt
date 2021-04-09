@@ -1,6 +1,5 @@
-how to implement scoring:
-- need to keep track of trick score and game score
-- game score is in the player class already
-- could add trick score as well, would need to be reset at the end of a hand (or beginning of new hand)
-	- could reset trick scores when dealing...
-- OR could change the bids list to be a tuple of trick score and bids...
+basic game tructure done!
+
+TODO: create a way to get game stats for a large number of games
+	- print output of all games to separate files
+	- create verbosity argument

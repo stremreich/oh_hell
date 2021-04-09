@@ -1,5 +1,6 @@
 import random
 from itertools import islice, cycle, compress
+import csv
 
 suit_names = ["Spades", "Clubs", "Hearts", "Diamonds"]
 card_vals = ["Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King", "Ace"]
@@ -61,6 +62,7 @@ class Deck:
 		for it in range(52):
 			print(self.order[it].getName())
 
+	''' # Needs to be re-made for non-full deck, do if needed...
 	def printOrderSh(self):
 		print("----")
 		for it1 in range(4):
@@ -70,6 +72,7 @@ class Deck:
 				line += " "
 			print(line)
 		print("----")
+	'''
 
 class Player:
 
@@ -79,12 +82,14 @@ class Player:
 		else:
 			self.name = args[0]
 		
-		self.score = 0
+		self.gameScore = 0
+		self.trickScore = 0
+		self.bid = 0
 		self.hand = []
 
 	def printPlayerInfo(self):
 		print('Info for player %s' % self.name)
-		print('Score: %d' % self.score)
+		print('Score: %d' % self.gameScore)
 		print('Hand contents:')
 		for card in self.hand:
 			print(card.getName())
@@ -110,9 +115,9 @@ class Game:
 		#print('Maximum possible starting cards: %d' % int(52 / len(self.playerNames)))
 		print('Player Scores: ')
 		for player in self.players:
-			print('%s: %d' % (player.name, player.score))
-		print('Deck contents: ')
-		self.deck.printOrderSh()
+			print('%s: %d' % (player.name, player.gameScore))
+		#print('Deck contents: ')
+		#self.deck.printOrderSh()
 		
 	def play(self):
 		handNums = list(range(self.maxHands, 0 , -1)) + list(range(2, self.maxHands + 1))
@@ -120,17 +125,20 @@ class Game:
 		for handIndex, handLength in enumerate(handNums): #hand loop; handIndex is the nth hand and handLength is the tricks in the hand
 			self.deck = Deck() #re-fill deck
 			self.deck.shuffle() #shuffle
-			for _ in range(handLength):  #deal cards
-				for i, player in enumerate(self.players):
-					self.players[i].hand.append(self.deck.order.pop())
+			for i in range(handLength):  #deal cards
+				for j, player in enumerate(self.players):
+					if (i == 0): #reset bids and trick scores
+						self.players[j].bid = 0
+						self.players[j].trickScore = 0
+					self.players[j].hand.append(self.deck.order.pop())
 			trumpCard = self.deck.order.pop()  #turn trump card face-up
-			bids = [0] * len(self.players)  # make bids TODO: make this controlled by a changeable decision function
+			#bids = [0] * len(self.players)  # make bids TODO: make this controlled by a changeable decision function
 			sumbids = 0
-			for i in range(len(bids)):
-				bids[i] = random.randint(0, 2) # just give a random bid for now TODO: make generalized
-				sumbids += bids[i]
+			for player in self.players:
+				player.bid = random.randint(0, 2) # just give a random bid for now TODO: make generalized
+				sumbids += player.bid
 			if (sumbids == handLength and self.hook): #enforce the hook, this should be handled in the method above eventually
-				bids[len(self.players) - 1] += 1
+				self.players[-1].bid += 1
 
 			dealer = dealers[handIndex]
 			dealerIndex = self.players.index(dealer)
@@ -157,20 +165,48 @@ class Game:
 							playedCards.append(player.hand.pop(random.randrange(len(player.hand))))
 					
 					print("{} played {}".format(player.name, playedCards[-1].getName()))
-						
+				
+				# evaluate winner, increment trick score
 				wonCard = cardEval(playedCards, trumpCard)
 				wonPlayer = trickOrder[playedCards.index(wonCard)]
 				print("{} won the trick with the {}".format(wonPlayer.name, wonCard.getName()))
-				#TODO: increment trick score
+				wonPlayer.trickScore += 1
 				
 				#re-make the trick order based on winner of this trick
 				playersIndex = self.players.index(wonPlayer)
 				trickOrder = list(islice(cycle(self.players), playersIndex, playersIndex + len(self.players)))
 			
-			#TODO: evaluate bids and increment game scores
+			#evaluate bids and increment game scores
+			print("Evaluating bids for hand {}:".format(handIndex))
+			for player in self.players:
+				if player.trickScore == player.bid:
+					player.gameScore += 10 + player.trickScore
+					print("{} took {} tricks and bid {}. +{} points".format(player.name, player.trickScore, player.bid, 10 + player.trickScore))
+				else:
+					player.gameScore += player.trickScore
+					print("{} took {} tricks and bid {}. +{} points".format(player.name, player.trickScore, player.bid, player.trickScore))
+		
+		print("Final Scores:")
+		for player in self.players:
+			print("{} - {}".format(player.name, player.gameScore))
+
+def runTest(numGames, pNames, nHands, hook):
+	with open('gameData.csv', mode='w', newline='') as dataFile:
+		dataWriter = csv.writer(dataFile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+		titleRow = ['Game #'] + pNames
+		dataWriter.writerow(titleRow)
+
+		for i in range(numGames):
+			g = Game(pNames, nHands, hook)
+			g.play()
+			g.printGameInfo()
+			dataRow = [i]
+			for player in g.players:
+				dataRow.append(player.gameScore)
+			dataWriter.writerow(dataRow)
 
 
-
+'''
 c = Card(8,1)
 c2 = Card(11,3)
 d = Deck()
@@ -178,10 +214,12 @@ p = Player("testPlayer")
 p.hand = [c, c2]
 
 p.printPlayerInfo()
+'''
 
 pN = ['STR', 'ETR', 'Mom', '3P', 'PJ', 'CJ']
+#g = Game(pN, 7, True)
+#g.printGameInfo()
+#g.play()
+#g.printGameInfo()
 
-g = Game(pN, 7, True)
-g.printGameInfo()
-g.play()
-
+runTest(100, pN, 7, True)
