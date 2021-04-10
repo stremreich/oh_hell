@@ -5,6 +5,25 @@ import csv
 suit_names = ["Spades", "Clubs", "Hearts", "Diamonds"]
 card_vals = ["Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King", "Ace"]
 
+class randAI:
+	def __init__(self, *args, **kwargs):
+		self.name = "randAI"
+
+	def pick_bid(self, player, trump_card):
+		return
+	
+	def pick_card(self, player, trump_card):
+		return
+
+class trickAI(randAI):
+	def __init__(self, *args, **kwargs):
+		self.name = "trickAI"
+
+class countAI(randAI):
+	def __init__(self, *args, **kwargs):
+		self.name = "countAI"
+
+
 def cardEval(cardList, trumpCard):
 
 	trumpList = [0]*len(cardList)
@@ -96,30 +115,35 @@ class Player:
 
 class Game:
 
-	def __init__(self, pNames, nHands, hookBool):
+	def __init__(self, pNames, nHands, hookBool, verbose):
 		self.maxHands = nHands
 		self.hook = hookBool
 		self.deck = Deck()
 		self.deck.shuffle()
+		self.verbose = verbose
 		self.players = []
 		for name in pNames:
 			self.players.append(Player(name))
 
 	def printGameInfo(self):
-		print('Game Info: ')
-		#print('Number of players: %d' % len(self.playerNames))
-		#print('Players:')
+		verboseprint = print if self.verbose else lambda *a, **k: None
+
+		verboseprint('Game Info: ')
+		#verboseprint('Number of players: %d' % len(self.playerNames))
+		#verboseprint('Players:')
 		#for pName in self.playerNames:
-		#  	print(pName)
-		print('Maximum starting cards: %d' % self.maxHands)
-		#print('Maximum possible starting cards: %d' % int(52 / len(self.playerNames)))
-		print('Player Scores: ')
+		#  	verboseprint(pName)
+		verboseprint('Maximum starting cards: %d' % self.maxHands)
+		#verboseprint('Maximum possible starting cards: %d' % int(52 / len(self.playerNames)))
+		verboseprint('Player Scores: ')
 		for player in self.players:
-			print('%s: %d' % (player.name, player.gameScore))
-		#print('Deck contents: ')
+			verboseprint('%s: %d' % (player.name, player.gameScore))
+		#verboseprint('Deck contents: ')
 		#self.deck.printOrderSh()
 		
 	def play(self):
+		verboseprint = print if self.verbose else lambda *a, **k: None
+
 		handNums = list(range(self.maxHands, 0 , -1)) + list(range(2, self.maxHands + 1))
 		dealers = list(islice(cycle(self.players), 0, len(handNums)))  # make list of all dealers for all hands
 		for handIndex, handLength in enumerate(handNums): #hand loop; handIndex is the nth hand and handLength is the tricks in the hand
@@ -144,7 +168,7 @@ class Game:
 			dealerIndex = self.players.index(dealer)
 			trickOrder = list(islice(cycle(self.players), dealerIndex, dealerIndex + len(self.players))) #set up the initial trick order
 			for trick in range(handLength): #loop through all tricks in a hand
-				print("Trick %d:" % (trick + 1))
+				verboseprint("Trick %d:" % (trick + 1))
 				playedCards = []	
 
 				for player in trickOrder:
@@ -164,12 +188,12 @@ class Game:
 						if(not played): #if there's no legal card, play a random card
 							playedCards.append(player.hand.pop(random.randrange(len(player.hand))))
 					
-					print("{} played {}".format(player.name, playedCards[-1].getName()))
+					verboseprint("{} played {}".format(player.name, playedCards[-1].getName()))
 				
 				# evaluate winner, increment trick score
 				wonCard = cardEval(playedCards, trumpCard)
 				wonPlayer = trickOrder[playedCards.index(wonCard)]
-				print("{} won the trick with the {}".format(wonPlayer.name, wonCard.getName()))
+				verboseprint("{} won the trick with the {}".format(wonPlayer.name, wonCard.getName()))
 				wonPlayer.trickScore += 1
 				
 				#re-make the trick order based on winner of this trick
@@ -177,27 +201,32 @@ class Game:
 				trickOrder = list(islice(cycle(self.players), playersIndex, playersIndex + len(self.players)))
 			
 			#evaluate bids and increment game scores
-			print("Evaluating bids for hand {}:".format(handIndex))
+			verboseprint("Evaluating bids for hand {}:".format(handIndex))
 			for player in self.players:
 				if player.trickScore == player.bid:
 					player.gameScore += 10 + player.trickScore
-					print("{} took {} tricks and bid {}. +{} points".format(player.name, player.trickScore, player.bid, 10 + player.trickScore))
+					verboseprint("{} took {} tricks and bid {}. +{} points".format(player.name, player.trickScore, player.bid, 10 + player.trickScore))
 				else:
 					player.gameScore += player.trickScore
-					print("{} took {} tricks and bid {}. +{} points".format(player.name, player.trickScore, player.bid, player.trickScore))
+					verboseprint("{} took {} tricks and bid {}. +{} points".format(player.name, player.trickScore, player.bid, player.trickScore))
 		
-		print("Final Scores:")
+		verboseprint("Final Scores:")
 		for player in self.players:
-			print("{} - {}".format(player.name, player.gameScore))
+			verboseprint("{} - {}".format(player.name, player.gameScore))
 
-def runTest(numGames, pNames, nHands, hook):
+def runTest(numGames, pNames, nHands, hook, verbose):
+	verboseprint = print if verbose else lambda *a, **k: None
+
 	with open('gameData.csv', mode='w', newline='') as dataFile:
 		dataWriter = csv.writer(dataFile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
 		titleRow = ['Game #'] + pNames
 		dataWriter.writerow(titleRow)
 
 		for i in range(numGames):
-			g = Game(pNames, nHands, hook)
+			if (i%100 == 0):
+				print('Processing trial {}...'.format(i))
+			verboseprint('Processing trial {}...'.format(i))
+			g = Game(pNames, nHands, hook, verbose)
 			g.play()
 			g.printGameInfo()
 			dataRow = [i]
@@ -222,4 +251,4 @@ pN = ['STR', 'ETR', 'Mom', '3P', 'PJ', 'CJ']
 #g.play()
 #g.printGameInfo()
 
-runTest(100, pN, 7, True)
+runTest(10000, pN, 7, True, False)

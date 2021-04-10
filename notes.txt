@@ -1,5 +1,28 @@
 basic game tructure done!
 
+TODO: add an automatic suite of plots/analysis to the testing function rather than just csv -> excel
+
 TODO: create a way to get game stats for a large number of games
-	- print output of all games to separate files
-	- create verbosity argument
+	- generalize the verbosity option better
+
+TODO: Generalize bid, card picking AI to functions
+	- pick_bid(Player, trump_card)
+	- play_card(Player, trump_card)
+	- can add info (such as played cards, etc. using python function args method)
+	- could make AI-specific class (RandAI, TrickAI, etc.)
+		- then give each class the above two functions
+		- then when creating a Player, give them a brain that is that AI class
+		- then have them call the universal functions from their "brain"
+		- class inheritance
+	- AIs:
+		- RandAI: already implemented, "base" AI
+		- TrickAI: more or less copy trickster cards oh hell AI
+			- bid = Aces+trump
+			- if below bid or above bid:
+				- play worst card that will win trick if possible
+					- do a basic card ranking (trump > suit > non-suit)
+				- else play worst card
+		- CountAI: card counting AI
+			- keep track of played cards
+			- calculate card strength by number of un-played cards that could beat it
+			- may not even make this one...
